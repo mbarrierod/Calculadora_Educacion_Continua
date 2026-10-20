@@ -1,0 +1,719 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Calculadora de Precios — Diplomados S4Learning</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #101820;
+    --panel: #17222c;
+    --panel-2: #1d2b37;
+    --panel-3: #223241;
+    --border: #2a3944;
+    --text: #eef3f6;
+    --text-dim: #9fb0ba;
+    --teal: #2fb0a3;
+    --teal-dim: #1a2e2c;
+    --amber: #e0a53c;
+    --amber-dim: #33291a;
+    --violet: #8b7ee8;
+    --violet-dim: #241a40;
+    --danger: #d9694f;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', system-ui, sans-serif;
+    min-height:100vh;
+    padding: 28px 18px 60px;
+  }
+  .wrap{max-width:1040px;margin:0 auto;}
+  header{margin-bottom:26px;}
+  .eyebrow{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:12.5px;
+    color: var(--teal);
+    letter-spacing:.03em;
+    margin-bottom:8px;
+  }
+  h1{
+    font-family:'Space Grotesk', sans-serif;
+    font-size:28px;
+    line-height:1.15;
+    margin:0 0 8px;
+    font-weight:700;
+    letter-spacing:-.01em;
+  }
+  .sub{color:var(--text-dim); font-size:14.5px; max-width:68ch; line-height:1.5;}
+
+  .grid{
+    display:grid;
+    grid-template-columns: 1fr;
+    gap:18px;
+  }
+  @media(min-width:860px){
+    .grid{grid-template-columns: 360px 1fr;}
+  }
+
+  .card{
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 20px;
+    align-self:start;
+  }
+  .field{margin-bottom:18px;}
+  .field:last-child{margin-bottom:0;}
+  label{
+    display:block;
+    font-size:12.5px;
+    color: var(--text-dim);
+    margin-bottom:7px;
+    font-weight:600;
+    letter-spacing:.01em;
+  }
+  input[type=text], input[type=date], select{
+    width:100%;
+    background: var(--panel-2);
+    border:1px solid var(--border);
+    color: var(--text);
+    padding:11px 12px;
+    border-radius:9px;
+    font-size:14.5px;
+    font-family:inherit;
+    outline:none;
+    transition: border-color .15s ease;
+  }
+  input[type=text]:focus, input[type=date]:focus, select:focus{
+    border-color: var(--teal);
+  }
+  select:disabled{opacity:.45; cursor:not-allowed;}
+
+  .combo{position:relative;}
+  .combo-list{
+    position:absolute;
+    top:calc(100% + 6px);
+    left:0; right:0;
+    max-height:280px;
+    overflow-y:auto;
+    background: var(--panel-2);
+    border:1px solid var(--border);
+    border-radius:10px;
+    z-index:20;
+    box-shadow: 0 12px 28px rgba(0,0,0,.35);
+    display:none;
+  }
+  .combo-list.open{display:block;}
+  .combo-item{
+    padding:10px 12px;
+    font-size:13.5px;
+    cursor:pointer;
+    border-bottom:1px solid var(--border);
+    line-height:1.35;
+  }
+  .combo-item:last-child{border-bottom:none;}
+  .combo-item:hover, .combo-item.active{background: var(--teal-dim); color:#bdf0e8;}
+  .combo-item .meta{display:block; color:var(--text-dim); font-size:11.5px; margin-top:2px; font-family:'IBM Plex Mono',monospace;}
+  .combo-empty{padding:14px 12px; color:var(--text-dim); font-size:13px;}
+
+  .chip-row{display:flex; gap:6px; flex-wrap:wrap; margin-top:8px;}
+  .chip{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11px;
+    padding:4px 9px;
+    border-radius:100px;
+    border:1px solid var(--border);
+    color: var(--text-dim);
+  }
+  .hint{font-size:12px; color:var(--text-dim); margin-top:6px; line-height:1.4;}
+
+  .seg{display:flex; gap:6px; flex-wrap:wrap;}
+  .seg button{
+    flex: 1 1 auto;
+    background: var(--panel-2);
+    border:1px solid var(--border);
+    color: var(--text-dim);
+    padding:9px 10px;
+    border-radius:8px;
+    font-size:13px;
+    font-family:inherit;
+    cursor:pointer;
+    transition: all .12s ease;
+  }
+  .seg button:hover{border-color:var(--teal);}
+  .seg button.active{background: var(--teal-dim); color:#bdf0e8; border-color:var(--teal); font-weight:600;}
+  .seg button:disabled{opacity:.3; cursor:not-allowed;}
+  .seg button.locked{border-style:dashed; color:#b79a5b;}
+
+  /* Result panel */
+  .result-card{
+    background: var(--panel);
+    border:1px solid var(--border);
+    border-radius:14px;
+    padding:24px;
+    min-height:100%;
+  }
+  .placeholder{
+    display:flex; flex-direction:column; align-items:flex-start; justify-content:center;
+    color: var(--text-dim);
+    min-height:340px;
+    font-size:14px;
+    line-height:1.6;
+  }
+  .placeholder b{color:var(--text);}
+
+  .status-badge{
+    display:inline-flex;
+    align-items:center;
+    gap:7px;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:12px;
+    font-weight:600;
+    padding:6px 12px;
+    border-radius:100px;
+    letter-spacing:.02em;
+    margin-bottom:16px;
+  }
+  .status-badge.anterior{background:var(--teal-dim); color:#7fe0d2; border:1px solid #2c5f57;}
+  .status-badge.nuevo{background:var(--amber-dim); color:#f2c477; border:1px solid #6b5426;}
+  .dot{width:7px;height:7px;border-radius:50%; background:currentColor;}
+
+  .prog-name{
+    font-family:'Space Grotesk', sans-serif;
+    font-size:19px;
+    font-weight:700;
+    line-height:1.3;
+    margin-bottom:4px;
+  }
+  .prog-meta{color:var(--text-dim); font-size:13px; margin-bottom:20px; font-family:'IBM Plex Mono',monospace;}
+
+  .deadline-box{
+    display:flex;
+    gap:12px;
+    align-items:flex-start;
+    background: var(--amber-dim);
+    border:1px solid #6b5426;
+    border-radius:10px;
+    padding:14px 16px;
+    margin-bottom:18px;
+  }
+  .deadline-box.ok{background:var(--teal-dim); border-color:#2c5f57;}
+  .deadline-box .ic{font-size:18px; line-height:1.2;}
+  .deadline-box .txt{font-size:13.5px; line-height:1.5;}
+  .deadline-box .txt b{display:block; font-size:14.5px; margin-bottom:2px;}
+
+  .options-grid{
+    display:grid;
+    grid-template-columns: 1fr;
+    gap:14px;
+    margin-bottom:18px;
+  }
+  @media(min-width:640px){
+    .options-grid{grid-template-columns: 1fr 1fr;}
+  }
+  .price-block{
+    background: var(--panel-2);
+    border:1px solid var(--border);
+    border-radius:12px;
+    padding:18px;
+  }
+  .price-block.single{margin-bottom:18px;}
+  .opt-head{display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;}
+  .opt-label{font-size:12.5px; font-weight:700; color:var(--teal); letter-spacing:.02em; font-family:'IBM Plex Mono',monospace;}
+  .opt-beca{font-size:11px; color:var(--text-dim);}
+  .price-label{font-size:12px; color:var(--text-dim); font-weight:600; margin-bottom:5px;}
+  .price-total{
+    font-family:'Space Grotesk', sans-serif;
+    font-size:30px;
+    font-weight:700;
+    line-height:1.1;
+    letter-spacing:-.01em;
+    margin-bottom:12px;
+  }
+  .price-total .sub-currency{font-size:14px; color:var(--text-dim); font-weight:500; margin-left:5px;}
+  .price-total .lista{font-size:12px; color:var(--text-dim); font-weight:500; text-decoration:line-through; margin-left:8px;}
+
+  table.months{
+    width:100%;
+    border-collapse:collapse;
+    font-size:13px;
+    margin-top:2px;
+  }
+  table.months th, table.months td{
+    text-align:left;
+    padding:7px 8px;
+    border-bottom:1px solid var(--border);
+  }
+  table.months th{color:var(--text-dim); font-weight:600; font-size:10.5px; text-transform:uppercase; letter-spacing:.03em;}
+  table.months td.amt{font-family:'IBM Plex Mono', monospace; text-align:right;}
+  table.months tr:last-child td{border-bottom:none; font-weight:700;}
+
+  .tag-row{display:flex; gap:6px; flex-wrap:wrap; margin-top:10px;}
+  .tag{font-size:10.5px; font-family:'IBM Plex Mono',monospace; color:var(--text-dim); border:1px solid var(--border); padding:2px 7px; border-radius:100px;}
+
+  .speech-btn{
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    background: var(--violet);
+    color:#100e22;
+    font-weight:700;
+    font-size:13.5px;
+    padding:12px 18px;
+    border-radius:10px;
+    border:none;
+    cursor:pointer;
+    font-family:inherit;
+    margin-bottom:18px;
+    transition: transform .1s ease, filter .1s ease;
+  }
+  .speech-btn:hover{filter:brightness(1.08);}
+  .speech-btn:active{transform:scale(.98);}
+
+  .speech-panel{
+    display:none;
+    background: #1a1430;
+    border:1px solid #3c2f66;
+    border-radius:12px;
+    padding:18px 20px;
+    margin-bottom:18px;
+  }
+  .speech-panel.open{display:block;}
+  .speech-route{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11.5px;
+    color:#c9bdf2;
+    background:#241a40;
+    border:1px solid #3c2f66;
+    border-radius:8px;
+    padding:8px 10px;
+    margin-bottom:14px;
+    letter-spacing:.01em;
+  }
+  .speech-text p{font-size:14px; line-height:1.65; margin:0 0 12px;}
+  .speech-text p:last-child{margin-bottom:0;}
+  .speech-text b{color:#e3dcff;}
+  .speech-note{font-size:11.5px; color:var(--text-dim); margin-top:12px; padding-top:12px; border-top:1px dashed #3c2f66; line-height:1.5;}
+
+  .footer-summary{
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+    margin-top:18px;
+    padding-top:18px;
+    border-top:1px dashed var(--border);
+  }
+  .fs-item{
+    background: var(--panel-3);
+    border:1px solid var(--border);
+    border-radius:10px;
+    padding:10px 14px;
+    flex:1 1 180px;
+  }
+  .fs-item .fs-label{font-size:10.5px; color:var(--text-dim); text-transform:uppercase; letter-spacing:.03em; margin-bottom:4px; font-weight:600;}
+  .fs-item .fs-val{font-size:13.5px; font-family:'IBM Plex Mono', monospace; color:var(--text); word-break:break-word;}
+
+  .notes{font-size:12px; color:var(--text-dim); line-height:1.5; margin-top:10px;}
+
+  details.ref{margin-top:22px;}
+  details.ref summary{cursor:pointer; color:var(--text-dim); font-size:13px; padding:4px 0;}
+  .ref-table{width:100%; border-collapse:collapse; font-size:13px; margin-top:10px;}
+  .ref-table th, .ref-table td{padding:8px 10px; border-bottom:1px solid var(--border); text-align:left;}
+  .ref-table th{color:var(--text-dim); font-size:11px; text-transform:uppercase;}
+
+  footer.page{margin-top:26px; text-align:center; color:var(--text-dim); font-size:12px;}
+
+  ::-webkit-scrollbar{width:8px;}
+  ::-webkit-scrollbar-thumb{background:#33454f; border-radius:8px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="eyebrow">S4LEARNING · CONSULTA DE PRECIOS EN LLAMADA</div>
+    <h1>Calculadora de precios por bloque de apertura</h1>
+    <p class="sub">Elige el programa, el tipo de lead y la fecha en que se creó / contactó al lead. Cuando ya aplique el nuevo costo, la calculadora te muestra las dos alternativas de beca para que el cliente elija, además del speech sugerido para presentarlas.</p>
+  </header>
+
+  <div class="grid">
+    <div class="card">
+      <div class="field">
+        <label for="programaInput">Programa</label>
+        <div class="combo">
+          <input type="text" id="programaInput" placeholder="Escribe para buscar el programa…" autocomplete="off">
+          <div class="combo-list" id="programaList"></div>
+        </div>
+        <div class="chip-row" id="progChips"></div>
+      </div>
+
+      <div class="field">
+        <label>Tipo de lead / oferta</label>
+        <div class="seg" id="tipoSeg">
+          <button data-tipo="HOTLEAD" type="button">Hotlead</button>
+          <button data-tipo="RMKT" type="button">RMKT</button>
+          <button data-tipo="EGRESADOS" type="button">Egresados</button>
+          <button data-tipo="PAGO_UNICO" type="button">Pago único</button>
+        </div>
+        <div class="hint">Selecciona primero un programa para habilitar esta opción.</div>
+        <div class="hint" id="rmktHint" style="color:#f2c477;"></div>
+      </div>
+
+      <div class="field">
+        <label for="fechaInput">Fecha de creación del lead</label>
+        <input type="date" id="fechaInput">
+        <div class="hint">Fecha en que se ofertó / registró al lead. Con esto se calcula si conserva el precio anterior o ya aplica el nuevo.</div>
+      </div>
+    </div>
+
+    <div class="result-card" id="resultCard">
+      <div class="placeholder" id="placeholder">
+        <div style="font-size:34px; margin-bottom:10px;">🎓</div>
+        <div><b>Aún no hay resultado.</b></div>
+        <div>Elige un programa, el tipo de lead y la fecha de creación para ver el precio que corresponde, su vigencia y — si ya aplica el nuevo costo — las dos alternativas y el speech sugerido.</div>
+      </div>
+    </div>
+  </div>
+
+  <details class="ref">
+    <summary>Ver calendario de los 3 bloques de apertura</summary>
+    <table class="ref-table" id="blocksTable"></table>
+  </details>
+
+  <footer class="page">Precios tomados de "Precio actual" y "Nuevos costo"; bloques y fechas de "Bajada por programa"; speech de "Speech nuevos costos". Verifica siempre las cifras exactas en pantalla antes de confirmar con el cliente.</footer>
+</div>
+
+<script>
+const DATA = {"blocks":[{"bloque":1,"fecha_cambio":"2026-10-05","fin_ventana":"2026-10-19","fecha_gracia":"2026-11-04"},{"bloque":2,"fecha_cambio":"2026-10-20","fin_ventana":"2026-11-03","fecha_gracia":"2026-11-19"},{"bloque":3,"fecha_cambio":"2026-11-04","fin_ventana":"2026-11-18","fecha_gracia":"2026-12-04"}],"programs":[{"nombre":"DIPLOMADO EN TANATOLOGÍA","bloque":1,"fecha_cambio":"2026-10-05","fecha_gracia":"2026-11-04","duracion":"6 meses"},{"nombre":"DIPLOMADO EN ADMINISTRACIÓN FINANCIERA","bloque":1,"fecha_cambio":"2026-10-05","fecha_gracia":"2026-11-04","duracion":"6 meses"},{"nombre":"DIPLOMADO EN ADMINISTRACIÓN DE PROYECTOS","bloque":1,"fecha_cambio":"2026-10-05","fecha_gracia":"2026-11-04","duracion":"6 meses"},{"nombre":"DIPLOMADO EN REHABILITACIÓN DEL ADULTO MAYOR","bloque":1,"fecha_cambio":"2026-10-05","fecha_gracia":"2026-11-04","duracion":"6 meses"},{"nombre":"DIPLOMADO EN DIVERSIDAD Y EQUIDAD DE GÉNERO","bloque":1,"fecha_cambio":"2026-10-05","fecha_gracia":"2026-11-04","duracion":"6 meses"},{"nombre":"DIPLOMADO EN CIENCIAS DE DATOS E INTELIGENCIA ARTIFICIAL","bloque":1,"fecha_cambio":"2026-10-05","fecha_gracia":"2026-11-04","duracion":"8 meses"},{"nombre":"DIPLOMADO EN NUTRICION ESPECIAL EN ENFERMEDADES METABOLICAS","bloque":1,"fecha_cambio":"2026-10-05","fecha_gracia":"2026-11-04","duracion":"6 meses"},{"nombre":"DIPLOMADO EN EDUCACIÓN EN CIENCIAS DE LA SALUD","bloque":1,"fecha_cambio":"2026-10-05","fecha_gracia":"2026-11-04","duracion":"6 meses"},{"nombre":"DIPLOMADO EN ESTRATEGIAS Y OPERACIONES DE TRANSPORTE","bloque":1,"fecha_cambio":"2026-10-05","fecha_gracia":"2026-11-04","duracion":"8 meses"},{"nombre":"DIPLOMADO EN TECNOLOGÍAS DE LA INFORMACIÓN APLICADAS A LA LOGÍSTICA Y EL TRANSPORTE","bloque":1,"fecha_cambio":"2026-10-05","fecha_gracia":"2026-11-04","duracion":"8 meses"},{"nombre":"DIPLOMADO EN DISEÑO Y DESARROLLO DE SOFTWARE","bloque":1,"fecha_cambio":"2026-10-05","fecha_gracia":"2026-11-04","duracion":"8 meses"},{"nombre":"DIPLOMADO EN ANIMACIÓN DIGITAL Y CREACIÓN DE CONTENIDOS","bloque":1,"fecha_cambio":"2026-10-05","fecha_gracia":"2026-11-04","duracion":"8 meses"},{"nombre":"DIPLOMADO EN DISEÑO Y EVALUACION EN ENTORNOS DIGITALES","bloque":1,"fecha_cambio":"2026-10-05","fecha_gracia":"2026-11-04","duracion":"8 meses"},{"nombre":"DIPLOMADO EN GESTION DE EXPERIENCIAS DE APRENDIZAJE EN AMBIENTES VIRTUALES","bloque":1,"fecha_cambio":"2026-10-05","fecha_gracia":"2026-11-04","duracion":"8 meses"},{"nombre":"DIPLOMADO EN GESTIÓN DE CALIDAD Y MANTENIMIENTO DE SOFTWARE","bloque":1,"fecha_cambio":"2026-10-05","fecha_gracia":"2026-11-04","duracion":"8 meses"},{"nombre":"DIPLOMADO EN ADMINISTRACION DE LOS SERVICIOS DE SALUD","bloque":1,"fecha_cambio":"2026-10-05","fecha_gracia":"2026-11-04","duracion":"6 meses"},{"nombre":"DIPLOMADO EN INTELIGENCIA ARTIFICIAL APLICADA","bloque":2,"fecha_cambio":"2026-10-20","fecha_gracia":"2026-11-19","duracion":"8 meses"},{"nombre":"DIPLOMADO EN SOFT SKILLS Y HABILIDADES GERENCIALES","bloque":2,"fecha_cambio":"2026-10-20","fecha_gracia":"2026-11-19","duracion":"6 meses"},{"nombre":"DIPLOMADO EN COACHING ORGANIZACIONAL","bloque":2,"fecha_cambio":"2026-10-20","fecha_gracia":"2026-11-19","duracion":"6 meses"},{"nombre":"DIPLOMADO EN PENSAMIENTO CRÍTICO E INNOVACIÓN","bloque":2,"fecha_cambio":"2026-10-20","fecha_gracia":"2026-11-19","duracion":"6 meses"},{"nombre":"DIPLOMADO EN FUENTES Y TECNOLOGIAS DE ENERGIAS RENOVABLES","bloque":2,"fecha_cambio":"2026-10-20","fecha_gracia":"2026-11-19","duracion":"8 meses"},{"nombre":"DIPLOMADO EN CREATIVIDAD Y COMUNICACIÓN DIGITAL","bloque":2,"fecha_cambio":"2026-10-20","fecha_gracia":"2026-11-19","duracion":"8 meses"},{"nombre":"DIPLOMADO EN MÉTODOS CUANTITATIVOS PARA LA TOMA DE DECISIONES","bloque":2,"fecha_cambio":"2026-10-20","fecha_gracia":"2026-11-19","duracion":"8 meses"},{"nombre":"DIPLOMADO EN PRINCIPIOS EN EL ARTE DIGITAL Y ANIMACIÓN","bloque":2,"fecha_cambio":"2026-10-20","fecha_gracia":"2026-11-19","duracion":"6 meses"},{"nombre":"DIPLOMADO EN ANÁLISIS ECONÓMICO INTEGRAL","bloque":2,"fecha_cambio":"2026-10-20","fecha_gracia":"2026-11-19","duracion":"8 meses"},{"nombre":"DIPLOMADO EN DESARROLLO DE MEDIOS INTERACTIVOS","bloque":2,"fecha_cambio":"2026-10-20","fecha_gracia":"2026-11-19","duracion":"8 meses"},{"nombre":"DIPLOMADO EN TRANSICION Y ENERGIA SOSTENIBLE","bloque":2,"fecha_cambio":"2026-10-20","fecha_gracia":"2026-11-19","duracion":"8 meses"},{"nombre":"DIPLOMADO EN ATENCION DEL ADULTO MAYOR","bloque":2,"fecha_cambio":"2026-10-20","fecha_gracia":"2026-11-19","duracion":"6 meses"},{"nombre":"DIPLOMADO EN DIRECCIÓN DE OPERACIONES","bloque":3,"fecha_cambio":"2026-11-04","fecha_gracia":"2026-12-04","duracion":"6 meses"},{"nombre":"DIPLOMADO PROJECT MANAGEMENT","bloque":3,"fecha_cambio":"2026-11-04","fecha_gracia":"2026-12-04","duracion":"6 meses"},{"nombre":"DIPLOMADO EN MINDFULNESS PARA LOS INDIVIDUOS Y LAS FAMILIAS","bloque":3,"fecha_cambio":"2026-11-04","fecha_gracia":"2026-12-04","duracion":"6 meses"},{"nombre":"DIPLOMADO EN CONTABILIDAD Y GESTIÓN FINANCIERA","bloque":3,"fecha_cambio":"2026-11-04","fecha_gracia":"2026-12-04","duracion":"8 meses"},{"nombre":"DIPLOMADO EN PRUEBAS PSICOLÓGICAS PARA ADULTOS","bloque":3,"fecha_cambio":"2026-11-04","fecha_gracia":"2026-12-04","duracion":"6 meses"},{"nombre":"DIPLOMADO EN ESTRATEGIA E INNOVACIÓN DE NEGOCIOS","bloque":3,"fecha_cambio":"2026-11-04","fecha_gracia":"2026-12-04","duracion":"6 meses"},{"nombre":"DIPLOMADO EN DESARROLLO E-LEARNING","bloque":3,"fecha_cambio":"2026-11-04","fecha_gracia":"2026-12-04","duracion":"6 meses"},{"nombre":"DIPLOMADO EN PROGRAMACIÓN Y TECNOLOGÍA DE REDES","bloque":3,"fecha_cambio":"2026-11-04","fecha_gracia":"2026-12-04","duracion":"8 meses"},{"nombre":"DIPLOMADO EN GESTIÓN SOSTENIBLE DE LA CADENA DE SUMINISTRO","bloque":3,"fecha_cambio":"2026-11-04","fecha_gracia":"2026-12-04","duracion":"6 meses"},{"nombre":"DIPLOMADO EN GESTION CURRICULAR EN EDUCACION A DISTANCIA","bloque":3,"fecha_cambio":"2026-11-04","fecha_gracia":"2026-12-04","duracion":"6 meses"},{"nombre":"DIPLOMADO EN GESTION Y EFICIENCIA DE SISTEMAS ENERGETICOS","bloque":3,"fecha_cambio":"2026-11-04","fecha_gracia":"2026-12-04","duracion":"8 meses"}],"old":{"6 meses":{"RMKT":{"oferta":"RMKT - PLATZI","codigo":"ESC1.PLATZI.DIP.6.10.26","meses":[1000,1600,2000,2000,2000,2000],"total":10600,"tags":["VOXY","INCLUYE PLATZI"]},"HOTLEAD":{"oferta":"Hotlead - VOXY - PLATZI","codigo":"ESC2.PLATZI.DIP.6.10.26","meses":[799,1799,2500,2500,2500,2500],"total":12598,"tags":["VOXY","INCLUYE PLATZI"]},"EGRESADOS":{"oferta":"Egresado LIC- DIP","codigo":"ESC3.PLATZI.DIP.6.10.26","meses":[1100,1100,1100,1100,2100,2100],"total":8600,"tags":["INCLUYE PLATZI"]},"PAGO_UNICO":{"oferta":"Pago único (6 meses)","codigo":"DIP4.VOXY.1.10.25","meses":[10795],"total":10795,"tags":["Incluye Voxy"]}},"8 meses":{"RMKT":{"oferta":"RMKT - PLATZI","codigo":"ESC1.PLATZI.DIP.8.10.26","meses":[1100,1100,1100,1100,2100,2100,2100,2100],"total":12800,"tags":[]},"HOTLEAD":{"oferta":"Hotlead","codigo":"ESC2.PLATZI.DIP.8.10.26","meses":[799,1299,2099,2099,2099,2099,2099,2099],"total":14692,"tags":[]},"EGRESADOS":{"oferta":"Egresados","codigo":"ESC3.PLATZI.DIP.8.10.26","meses":[1099,1399,1999,1999,1999,1999,1999,1999],"total":14492,"tags":[]},"PAGO_UNICO":{"oferta":"Pago único (8 meses)","codigo":"DIP6.1.10.25","meses":[12503],"total":12503,"tags":["Incluye Voxy"]}}},"new_opt1":{"6 meses":{"HOTLEAD":{"codigo":"P1.DIP.PLATZI.VOXY.6.10.26","meses":[799,1889,2794,2794,2794,2794],"total":13864,"precio_lista":25000,"pct_beca":0.45,"tags":["PLATZI $100","VOXY"]},"RMKT":{"codigo":"P2.DIP.PLATZI.VOXY.6.10.26","meses":[1000,1700,2335,2335,2335,2335],"total":12042,"precio_lista":25000,"pct_beca":0.52,"tags":["PLATZI $100","VOXY"]},"EGRESADOS":{"codigo":"P1.DIP.PLATZI.6.10.26","meses":[1285,1385,1580,1580,2580,2580],"total":10990,"precio_lista":25000,"pct_beca":0.56,"tags":["PLATZI $100"]}},"8 meses":{"HOTLEAD":{"codigo":"P1.DIP.PLATZI.VOXY.8.10.26","meses":[799,1799,2664,2664,2664,2664,2664,2664],"total":18582,"precio_lista":25000,"pct_beca":0.26,"tags":["PLATZI $100","VOXY"]},"RMKT":{"codigo":"P2.DIP.PLATZI.VOXY.8.10.26","meses":[1214,1466,1562,1562,2562,2562,2562,2562],"total":16052,"precio_lista":25000,"pct_beca":0.36,"tags":["PLATZI $100","VOXY"]},"EGRESADOS":{"codigo":"P1.DIP.PLATZI.8.10.26","meses":[999,1399,2099,2099,2099,2099,2099,2099],"total":14992,"precio_lista":25000,"pct_beca":0.4,"tags":["PLATZI $100"]}}},"new_opt2":{"6 meses":{"HOTLEAD":{"codigo":"P3.DIP.PLATZI.VOXY.6.10.26","meses":[1500,2470,2470,2470,2470,2470],"total":13850,"precio_lista":25000,"pct_beca":0.45,"tags":["PLATZI $100","VOXY"]},"RMKT":{"codigo":"P4.DIP.PLATZI.VOXY.6.10.26","meses":[1300,2150,2150,2150,2150,2150],"total":12050,"precio_lista":25000,"pct_beca":0.52,"tags":["PLATZI $100","VOXY"]},"EGRESADOS":{"codigo":"P2.DIP.PLATZI.6.10.26","meses":[999,1999,1999,1999,1999,1999],"total":10994,"precio_lista":25000,"pct_beca":0.56,"tags":["PLATZI $100"]}},"8 meses":{"HOTLEAD":{"codigo":"P3.DIP.PLATZI.VOXY.8.10.26","meses":[1300,2470,2470,2470,2470,2470,2470,2470],"total":18590,"precio_lista":25000,"pct_beca":0.26,"tags":["PLATZI $100","VOXY"]},"RMKT":{"codigo":"P4.DIP.PLATZI.VOXY.8.10.26","meses":[999,2150,2150,2150,2150,2150,2150,2150],"total":16049,"precio_lista":25000,"pct_beca":0.36,"tags":["PLATZI $100","VOXY"]},"EGRESADOS":{"codigo":"P2.DIP.PLATZI.8.10.26","meses":[999,1999,1999,1999,1999,1999,1999,1999],"total":14992,"precio_lista":25000,"pct_beca":0.4,"tags":["PLATZI $100"]}}},"speech_lines":["Speech nuevos costos","Primero menciona la mensualidad regular.","Después presenta el beneficio del cupón y los pagos preferenciales.","Finalmente, cierra con las dos alternativas.","NO memorices todos los números. Memoriza la ruta:","LISTA → BECA → MENSUALIDAD → CUPÓN → 2 ALTERNATIVAS → CIERRE","💰 EJEMPLO","Speech Cierre - Hot Lead","El costo de lista de este Diplomado es de $25,000, pero actualmente podemos ofrecerte una beca que deja la inversión en $13,864.","Ahora, tenemos un beneficio adicional por inicio de inscripción: contamos con cupones especiales de descuento que se liberan para poder aprovecharlos durante las siguientes 24 horas.","Esto nos permite manejar un esquema de pagos escalonados, donde puedes comenzar con un pago preferencial de tan solo $799; posteriormente realizarías un pago de $1,889 y después continuarías con pagos de $2,794 hasta completar tu Diplomado.","También tenemos una segunda alternativa de beca. En este caso, la mensualidad queda en $2,470, y puedes comenzar con un pago de $1,500, para posteriormente continuar con pagos de $2,470.","En ambas alternativas la inversión con beca es la misma; lo que cambia es la manera en que distribuyes tus pagos y el beneficio que puedes aprovechar al momento de iniciar tu inscripción.","Por eso, podemos aprovechar el beneficio que tienes disponible y avanzar con la alternativa que prefieras: ¿iniciamos aprovechando el cupón de descuento con tu primer pago de $799, o prefieres comenzar con $1,500 y continuar con pagos de $2,470?"],"new_unico":{"6 meses":{"codigo":"DIP6.UNICO2.1.10.26","meses":[10500],"total":10500,"tags":["VOXY","PLATZI $100"]},"8 meses":{"codigo":"DIP8.UNICO2.1.10.26","meses":[14300],"total":14300,"tags":["VOXY","PLATZI $100"]}}};
+
+function normalize(s){
+  return (s||'').toString().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+}
+function fmt(n){
+  return new Intl.NumberFormat('es-MX', {style:'currency', currency:'MXN', maximumFractionDigits:0}).format(Math.round(n));
+}
+function fmtDate(iso){
+  if(!iso) return '';
+  const [y,m,d] = iso.split('-').map(Number);
+  const dt = new Date(y, m-1, d);
+  return dt.toLocaleDateString('es-MX', {day:'2-digit', month:'long', year:'numeric'});
+}
+function tipoLabel(t){
+  return {HOTLEAD:'Hotlead', RMKT:'RMKT', EGRESADOS:'Egresados', PAGO_UNICO:'Pago único'}[t] || t;
+}
+
+const programaInput = document.getElementById('programaInput');
+const programaList = document.getElementById('programaList');
+const progChips = document.getElementById('progChips');
+const resultCard = document.getElementById('resultCard');
+const fechaInput = document.getElementById('fechaInput');
+const tipoSeg = document.getElementById('tipoSeg');
+const tipoButtons = [...tipoSeg.querySelectorAll('button')];
+
+let selectedProgram = null;
+let selectedTipo = null;
+
+function todayLocalISO(){
+  const d = new Date();
+  const p = n => String(n).padStart(2,'0');
+  return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}`;
+}
+fechaInput.value = todayLocalISO();
+
+// Regla RMKT: solo disponible si el lead tiene MÁS de 30 días desde su creación
+const RMKT_MIN_DIAS = 30;
+function diasDesde(iso){
+  const [y,m,d] = iso.split('-').map(Number);
+  const creado = new Date(y, m-1, d);
+  const t = new Date(); const hoy = new Date(t.getFullYear(), t.getMonth(), t.getDate());
+  return Math.round((hoy - creado) / 86400000);
+}
+function fechaDisponibleRMKT(iso){
+  const [y,m,d] = iso.split('-').map(Number);
+  const f = new Date(y, m-1, d + RMKT_MIN_DIAS + 1);
+  return `${f.getFullYear()}-${String(f.getMonth()+1).padStart(2,'0')}-${String(f.getDate()).padStart(2,'0')}`;
+}
+function rmktBloqueado(){
+  if(!fechaInput.value) return true;
+  return diasDesde(fechaInput.value) <= RMKT_MIN_DIAS;
+}
+const rmktBtn = tipoButtons.find(b => b.dataset.tipo === 'RMKT');
+const rmktHint = document.getElementById('rmktHint');
+function updateRmktLock(){
+  const locked = rmktBloqueado();
+  const programaListo = !!selectedProgram;
+  rmktBtn.classList.toggle('locked', locked);
+  rmktBtn.disabled = !programaListo || locked;
+  rmktBtn.innerHTML = locked ? '🔒 RMKT' : 'RMKT';
+  if(locked && selectedTipo === 'RMKT'){
+    selectedTipo = null;
+    rmktBtn.classList.remove('active');
+  }
+  if(!fechaInput.value){
+    rmktHint.textContent = '';
+  } else if(locked){
+    const dias = diasDesde(fechaInput.value);
+    rmktHint.innerHTML = `🔒 <b>RMKT bloqueado:</b> el lead tiene ${dias < 0 ? 'fecha futura' : dias + ' día' + (dias===1?'':'s')} de creado. La promoción RMKT solo aplica a leads con más de ${RMKT_MIN_DIAS} días (disponible a partir del ${fmtDate(fechaDisponibleRMKT(fechaInput.value))}).`;
+  } else {
+    rmktHint.textContent = `RMKT disponible: el lead tiene ${diasDesde(fechaInput.value)} días de creado.`;
+  }
+}
+
+function renderBlocksTable(){
+  const el = document.getElementById('blocksTable');
+  let html = '<tr><th>Bloque</th><th>Cambio de precio</th><th>Fin de ventana</th><th>Fin de gracia</th></tr>';
+  DATA.blocks.forEach(b => {
+    html += `<tr><td>Bloque ${b.bloque}</td><td>${fmtDate(b.fecha_cambio)}</td><td>${fmtDate(b.fin_ventana)}</td><td>${fmtDate(b.fecha_gracia)}</td></tr>`;
+  });
+  el.innerHTML = html;
+}
+renderBlocksTable();
+
+function renderList(filter){
+  const q = normalize(filter);
+  const items = DATA.programs.filter(p => normalize(p.nombre).indexOf(q) !== -1);
+  programaList.innerHTML = '';
+  if(items.length === 0){
+    programaList.innerHTML = '<div class="combo-empty">Sin coincidencias</div>';
+    programaList.classList.add('open');
+    return;
+  }
+  items.slice(0,60).forEach(p => {
+    const div = document.createElement('div');
+    div.className = 'combo-item';
+    div.innerHTML = `${p.nombre}<span class="meta">Bloque ${p.bloque} · ${p.duracion} · cambia ${p.fecha_cambio}</span>`;
+    div.addEventListener('mousedown', (e) => { e.preventDefault(); selectProgram(p.nombre); });
+    programaList.appendChild(div);
+  });
+  programaList.classList.add('open');
+}
+
+function selectProgram(nombre){
+  const prog = DATA.programs.find(p => p.nombre === nombre);
+  if(!prog) return;
+  selectedProgram = prog;
+  programaInput.value = prog.nombre;
+  programaList.classList.remove('open');
+
+  progChips.innerHTML = `
+    <span class="chip">Bloque ${prog.bloque}</span>
+    <span class="chip">Duración: ${prog.duracion}</span>
+    <span class="chip">Cambia: ${prog.fecha_cambio}</span>
+    <span class="chip">Gracia hasta: ${prog.fecha_gracia}</span>
+  `;
+
+  tipoButtons.forEach(b => b.disabled = false);
+  updateRmktLock();
+  compute();
+}
+
+tipoButtons.forEach(btn => {
+  btn.addEventListener('click', () => {
+    if(btn.disabled) return;
+    selectedTipo = btn.dataset.tipo;
+    tipoButtons.forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    compute();
+  });
+});
+
+function describeMonths(meses){
+  const runs = [];
+  meses.forEach(m => {
+    if(runs.length && Math.abs(runs[runs.length-1].val - m) < 0.5){
+      runs[runs.length-1].count++;
+    } else {
+      runs.push({val:m, count:1});
+    }
+  });
+  return runs;
+}
+
+function buildSpeech(tipo, duracion, progName, opt1, opt2, lista){
+  const label = tipoLabel(tipo);
+  const runs1 = describeMonths(opt1.meses);
+  const runs2 = describeMonths(opt2.meses);
+
+  let seg1;
+  if(runs1.length === 1){
+    seg1 = `un único pago de ${fmt(runs1[0].val)}`;
+  } else if(runs1.length === 2){
+    seg1 = `comenzar con un pago preferencial de tan solo ${fmt(runs1[0].val)}, y continuar con pagos de ${fmt(runs1[1].val)} hasta completar tu Diplomado`;
+  } else {
+    const last = runs1[runs1.length-1];
+    seg1 = `comenzar con un pago preferencial de tan solo ${fmt(runs1[0].val)}; posteriormente realizarías un pago de ${fmt(runs1[1].val)} y después continuarías con pagos de ${fmt(last.val)} hasta completar tu Diplomado`;
+  }
+
+  let seg2;
+  if(runs2.length === 1){
+    seg2 = `un único pago de ${fmt(runs2[0].val)}`;
+  } else {
+    const last2 = runs2[runs2.length-1];
+    seg2 = `la mensualidad queda en ${fmt(last2.val)}, y puedes comenzar con un pago de ${fmt(runs2[0].val)}, para posteriormente continuar con pagos de ${fmt(last2.val)}`;
+  }
+
+  const p1 = `El costo de lista de este Diplomado es de <b>${fmt(lista)}</b>, pero actualmente podemos ofrecerte una beca que deja la inversión en <b>${fmt(opt1.total)}</b> con la primera alternativa, o en <b>${fmt(opt2.total)}</b> con la segunda.`;
+  const p2 = `Ahora, tenemos un beneficio adicional por inicio de inscripción: contamos con cupones especiales de descuento que se liberan para poder aprovecharlos durante las siguientes 24 horas.`;
+  const p3 = `Esto nos permite manejar un esquema de pagos escalonados, donde puedes ${seg1}.`;
+  const p4 = `También tenemos una segunda alternativa de beca. En este caso, ${seg2}.`;
+  const p5 = `En ambas alternativas la inversión con beca es muy similar; lo que cambia es la manera en que distribuyes tus pagos y el beneficio que puedes aprovechar al momento de iniciar tu inscripción.`;
+  const p6 = `Por eso, podemos aprovechar el beneficio que tienes disponible y avanzar con la alternativa que prefieras: ¿iniciamos aprovechando el cupón de descuento con tu primer pago de ${fmt(runs1[0].val)}, o prefieres comenzar con ${fmt(runs2[0].val)}${runs2.length>1 ? ' y continuar con pagos de ' + fmt(runs2[runs2.length-1].val) : ''}?`;
+
+  return [p1,p2,p3,p4,p5,p6];
+}
+
+function compute(){
+  if(!selectedProgram) return;
+
+  if(!selectedTipo || !fechaInput.value){
+    resultCard.innerHTML = `<div class="placeholder">
+      <div style="font-size:34px; margin-bottom:10px;">🎓</div>
+      <div><b>${selectedProgram.nombre}</b></div>
+      <div>Selecciona el tipo de lead y confirma la fecha de creación para calcular el precio.</div>
+    </div>`;
+    return;
+  }
+
+  if(selectedTipo === 'RMKT' && rmktBloqueado()){ selectedTipo = null; updateRmktLock(); compute(); return; }
+  const dur = selectedProgram.duracion;
+  const fechaCreacion = new Date(fechaInput.value + 'T00:00:00');
+  const fechaCambio = new Date(selectedProgram.fecha_cambio + 'T00:00:00');
+  const fechaGracia = selectedProgram.fecha_gracia;
+
+  const esAnterior = fechaCreacion < fechaCambio;
+
+  if(esAnterior){
+    const plan = DATA.old[dur][selectedTipo];
+    let rows = '';
+    plan.meses.forEach((m,i) => {
+      rows += `<tr><td>${plan.meses.length>1 ? 'Pago '+(i+1) : 'Pago único'}</td><td class="amt">${fmt(m)}</td></tr>`;
+    });
+    rows += `<tr><td>Total</td><td class="amt">${fmt(plan.total)}</td></tr>`;
+
+    resultCard.innerHTML = `
+      <div class="status-badge anterior"><span class="dot"></span>PRECIO ANTERIOR — VIGENCIA POR GRACIA</div>
+      <div class="prog-name">${selectedProgram.nombre}</div>
+      <div class="prog-meta">${tipoLabel(selectedTipo)} · ${dur} · Bloque ${selectedProgram.bloque} · ${plan.codigo}</div>
+
+      <div class="deadline-box">
+        <div class="ic">⏳</div>
+        <div class="txt"><b>Fecha límite de pago: ${fmtDate(fechaGracia)}</b>
+        El lead fue creado antes del cambio de precio del bloque (${fmtDate(selectedProgram.fecha_cambio)}), por lo que conserva el precio anterior si formaliza / paga a más tardar en esta fecha. Después de ese día, solo aplica el precio nuevo.</div>
+      </div>
+
+      <div class="price-block single">
+        <div class="price-label">Precio total (anterior)</div>
+        <div class="price-total">${fmt(plan.total)}<span class="sub-currency">MXN</span></div>
+        <table class="months"><thead><tr><th>Concepto</th><th style="text-align:right;">Monto</th></tr></thead><tbody>${rows}</tbody></table>
+        ${plan.tags.length ? `<div class="tag-row">${plan.tags.map(t=>`<span class="tag">${t}</span>`).join('')}</div>` : ''}
+      </div>
+
+      <div class="footer-summary">
+        <div class="fs-item"><div class="fs-label">Duración</div><div class="fs-val">${dur}</div></div>
+        <div class="fs-item"><div class="fs-label">Código / Etiqueta</div><div class="fs-val">${plan.codigo}</div></div>
+        <div class="fs-item"><div class="fs-label">Bloque</div><div class="fs-val">Bloque ${selectedProgram.bloque}</div></div>
+      </div>
+    `;
+    return;
+  }
+
+  // Precio nuevo: dos opciones
+  const esPagoUnico = selectedTipo === 'PAGO_UNICO';
+  const opt1 = esPagoUnico ? DATA.new_unico[dur] : DATA.new_opt1[dur][selectedTipo];
+  const opt2 = esPagoUnico ? null : DATA.new_opt2[dur][selectedTipo];
+
+  function optionCard(plan, label){
+    let rows = '';
+    plan.meses.forEach((m,i) => {
+      rows += `<tr><td>${plan.meses.length>1 ? 'Pago '+(i+1) : 'Pago único'}</td><td class="amt">${fmt(m)}</td></tr>`;
+    });
+    rows += `<tr><td>Total</td><td class="amt">${fmt(plan.total)}</td></tr>`;
+    const becaTxt = plan.pct_beca ? `${Math.round(plan.pct_beca*100)}% beca` : '';
+    return `
+      <div class="price-block">
+        <div class="opt-head"><span class="opt-label">${label}</span><span class="opt-beca">${becaTxt}</span></div>
+        <div class="price-total">${fmt(plan.total)}<span class="sub-currency">MXN</span>${plan.precio_lista ? `<span class="lista">${fmt(plan.precio_lista)}</span>` : ''}</div>
+        <table class="months"><thead><tr><th>Concepto</th><th style="text-align:right;">Monto</th></tr></thead><tbody>${rows}</tbody></table>
+        ${plan.tags.length ? `<div class="tag-row">${plan.tags.map(t=>`<span class="tag">${t}</span>`).join('')}</div>` : ''}
+        <div class="notes">Código / etiqueta: ${plan.codigo}</div>
+      </div>
+    `;
+  }
+
+  let speechHtml = '';
+  if(!esPagoUnico){
+    const lista = opt1.precio_lista;
+    const paras = buildSpeech(selectedTipo, dur, selectedProgram.nombre, opt1, opt2, lista);
+    speechHtml = `
+      <button class="speech-btn" id="speechBtn" type="button">💬 Ver speech sugerido</button>
+      <div class="speech-panel" id="speechPanel">
+        <div class="speech-route">LISTA → BECA → MENSUALIDAD → CUPÓN → 2 ALTERNATIVAS → CIERRE</div>
+        <div class="speech-text">
+          ${paras.map(p => `<p>${p}</p>`).join('')}
+        </div>
+        <div class="speech-note">Generado automáticamente con las cifras de ${selectedProgram.nombre} (${tipoLabel(selectedTipo)}, ${dur}). Verifica los montos exactos en las tarjetas de arriba antes de confirmarlos con el cliente.</div>
+      </div>
+    `;
+  }
+
+  resultCard.innerHTML = `
+    <div class="status-badge nuevo"><span class="dot"></span>${esPagoUnico ? 'PRECIO NUEVO — OPCIÓN ÚNICA' : 'PRECIO NUEVO — EL CLIENTE ELIGE LA ALTERNATIVA'}</div>
+    <div class="prog-name">${selectedProgram.nombre}</div>
+    <div class="prog-meta">${tipoLabel(selectedTipo)} · ${dur} · Bloque ${selectedProgram.bloque}</div>
+
+    <div class="deadline-box ok">
+      <div class="ic">✅</div>
+      <div class="txt"><b>Precio nuevo ya vigente</b>
+      El lead fue creado el ${fmtDate(fechaInput.value)}, en o después del cambio de precio del bloque (${fmtDate(selectedProgram.fecha_cambio)}), así que aplican los nuevos costos. ${esPagoUnico ? 'El pago único tiene una sola opción de precio.' : 'Presenta ambas alternativas para que el cliente elija.'}</div>
+    </div>
+
+    ${speechHtml}
+
+    <div class="options-grid" ${esPagoUnico ? 'style="grid-template-columns:1fr;"' : ''}>
+      ${esPagoUnico ? optionCard(opt1, 'OPCIÓN ÚNICA') : optionCard(opt1, 'OPCIÓN 1') + optionCard(opt2, 'OPCIÓN 2')}
+    </div>
+
+    <div class="footer-summary">
+      <div class="fs-item"><div class="fs-label">Duración</div><div class="fs-val">${dur}</div></div>
+      ${esPagoUnico
+        ? `<div class="fs-item"><div class="fs-label">Código / Etiqueta</div><div class="fs-val">${opt1.codigo}</div></div>`
+        : `<div class="fs-item"><div class="fs-label">Etiqueta opción 1</div><div class="fs-val">${opt1.codigo}</div></div>
+      <div class="fs-item"><div class="fs-label">Etiqueta opción 2</div><div class="fs-val">${opt2.codigo}</div></div>`}
+      <div class="fs-item"><div class="fs-label">Bloque</div><div class="fs-val">Bloque ${selectedProgram.bloque}</div></div>
+    </div>
+  `;
+
+  const speechBtn = document.getElementById('speechBtn');
+  if(speechBtn){
+    speechBtn.addEventListener('click', () => {
+      document.getElementById('speechPanel').classList.toggle('open');
+    });
+  }
+}
+
+programaInput.addEventListener('input', () => {
+  selectedProgram = null;
+  selectedTipo = null;
+  tipoButtons.forEach(b => { b.disabled = true; b.classList.remove('active'); });
+  updateRmktLock();
+  progChips.innerHTML = '';
+  renderList(programaInput.value);
+  resultCard.innerHTML = `<div class="placeholder">
+      <div style="font-size:34px; margin-bottom:10px;">🎓</div>
+      <div><b>Aún no hay resultado.</b></div>
+      <div>Elige un programa, el tipo de lead y la fecha de creación para ver el precio que corresponde, su vigencia y — si ya aplica el nuevo costo — las dos alternativas y el speech sugerido.</div>
+    </div>`;
+});
+programaInput.addEventListener('focus', () => renderList(programaInput.value));
+document.addEventListener('click', (e) => {
+  if(!e.target.closest('.combo')) programaList.classList.remove('open');
+});
+fechaInput.addEventListener('change', () => { updateRmktLock(); compute(); });
+updateRmktLock();
+</script>
+</body>
+</html>
