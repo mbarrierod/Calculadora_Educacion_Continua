@@ -109,6 +109,23 @@
   .b-panel{margin-top:10px;background:var(--panel2);border:1px solid var(--border);border-radius:10px;padding:14px 16px;font-size:13.5px;line-height:1.6}
   .b-panel b{display:block;margin-bottom:3px}
 
+
+  .ref-btn{display:flex;align-items:center;justify-content:center;gap:12px;width:100%;margin:0 0 18px;padding:18px 22px;border:0;border-radius:14px;cursor:pointer;background:linear-gradient(135deg,#f6b35c,#ef7d57);color:#1b1208;font:800 19px var(--font-ui);letter-spacing:.01em;box-shadow:0 6px 22px rgba(239,125,87,.35)}
+  .ref-btn:hover{filter:brightness(1.07)}
+  .ref-btn .ref-emo{font-size:24px}
+  .ref-btn .ref-chev{margin-left:auto;font-size:15px;transition:transform .15s}
+  .ref-btn[aria-expanded="true"] .ref-chev{transform:rotate(180deg)}
+  .ref-panel{background:var(--panel);border:1px solid #6b4a2a;border-radius:14px;padding:22px 24px;margin:-4px 0 20px}
+  .ref-panel h3{margin:0 0 10px;font:700 12px var(--font-mono);letter-spacing:.06em;text-transform:uppercase;color:#f6b35c}
+  .ref-intro{font-size:16px;line-height:1.6;margin:0 0 8px;font-weight:600}
+  .ref-dif{display:grid;gap:10px;margin:14px 0 18px;padding:0;list-style:none}
+  .ref-dif li{background:var(--panel2);border:1px solid var(--border);border-left:3px solid #f6b35c;border-radius:10px;padding:12px 14px;font-size:14.5px;line-height:1.55}
+  .ref-reto p{font-size:14.5px;line-height:1.65;margin:0 0 10px;color:var(--text)}
+  .ref-speech{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:6px}
+  @media(max-width:900px){.ref-speech{grid-template-columns:1fr}}
+  .ref-sp{background:var(--violet-soft);border:1px solid var(--violet-line);border-radius:12px;padding:16px 18px}
+  .ref-sp b{display:block;font:700 13px var(--font-mono);color:var(--violet);text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px}
+  .ref-sp p{margin:0;font-size:14px;line-height:1.65}
   .speech-btn,.btn{display:inline-flex;align-items:center;gap:8px;font:700 13.5px var(--font-ui);padding:11px 17px;border-radius:10px;border:1px solid transparent;cursor:pointer}
   .speech-btn{background:var(--violet);color:#100e22;margin-bottom:16px}
   .btn.primary{background:var(--teal);color:var(--on-accent)}
@@ -190,6 +207,9 @@
     <h1>Calculadora de precios</h1>
     <p class="sub">Elige el tipo de venta, revisa el precio que corresponde y cierra con la cotización lista para enviar al cliente.</p>
   </header>
+
+  <button type="button" class="ref-btn" id="refBtn" aria-expanded="false" aria-controls="refPanel"><span class="ref-emo">🤝</span><span>Pide un referido</span><span class="ref-chev">▼</span></button>
+  <div class="ref-panel" id="refPanel" hidden></div>
 
   <div class="tabs" role="tablist" aria-label="Tipo de venta">
     <button class="tab" role="tab" id="tabBtn-diplomados" data-tab="diplomados" aria-selected="true" aria-controls="panel-diplomados" type="button">Diplomados</button>
@@ -617,6 +637,24 @@ function renderB2B(){
 }));
 $('b2bResult').addEventListener('click',e=>{if(e.target.closest('[data-act="finalize"]')&&b2b.quote)openQuote(b2b.quote)});
 renderB2B();
+
+/* =====================================================
+   PIDE UN REFERIDO
+   ===================================================== */
+const REFERIDOS={"intro": ["Recordemos que cada venta puede convertirse en una nueva oportunidad de negocio. 💪", "Tenemos 3 grandes diferenciadores que debemos aprovechar en cada conversación:"], "diferenciadores": ["✅ Costo RMKT preferencial para el referido.", "✅ Bonificación en colegiatura para referente y referido de $1000", "✅ Comisión diferencial para agente de $150, además la venta suma a tu meta mensual"], "reto": ["🎯 El reto es que pedir referidos se convierta en un hábito, no en una actividad opcional.", "En nuestras llamadas, identifiquemos a quién podemos ayudar a estudiar y expliquemos los beneficios de compartir esta oportunidad.", "📌 No se trata solo de conseguir contactos: se trata de generar oportunidades reales y darles seguimiento hasta convertirlas en ventas.", "¡Cada referido cuenta y puede acercarnos a nuestra meta! 🔥"], "speech": [{"titulo": "Beneficio compartido", "texto": "Antes de terminar, ¿hay algún amigo, familiar o compañero que también esté buscando estudiar? Te lo pregunto porque tenemos un esquema de referidos en el que puedes obtener una bonificación en tu colegiatura y la persona que nos recomiendes también puede beneficiarse. ¿A quién te gustaría compartirle esta oportunidad?"}, {"titulo": "Precio preferencial", "texto": "“Además de revisar tu opción de estudios, podemos ayudarte a que alguien cercano conozca nuestras alternativas. Si tienes un amigo o familiar que quiera estudiar, puede consultar el costo preferencial para referidos y tú también podrías obtener una bonificación en colegiatura. ¿Se te ocurre alguien a quien le pueda interesar?”"}, {"titulo": "Cierre de venta", "texto": "¡Qué bueno que estés dando este paso! Te invito a compartir esta oportunidad con alguien que también quiera crecer profesionalmente. Además de los beneficios que pueden obtener ambos, al recomendar a alguien nos ayudas a acercar la educación a más personas. ¿A quién podríamos invitar a conocer UTEL?"}]};
+(function(){
+  const btn=$('refBtn'),panel=$('refPanel');
+  panel.innerHTML=
+    '<h3>Mensaje principal</h3>'+
+    REFERIDOS.intro.map(t=>'<p class="ref-intro">'+esc(t)+'</p>').join('')+
+    '<ul class="ref-dif">'+REFERIDOS.diferenciadores.map(t=>'<li>'+esc(t)+'</li>').join('')+'</ul>'+
+    '<div class="ref-reto">'+REFERIDOS.reto.map(t=>'<p>'+esc(t)+'</p>').join('')+'</div>'+
+    '<h3 style="margin-top:20px">Speech sugeridos</h3>'+
+    '<div class="ref-speech">'+REFERIDOS.speech.map((s,i)=>'<div class="ref-sp"><b>'+(i+1)+'. '+esc(s.titulo)+'</b><p>'+esc(s.texto)+'</p></div>').join('')+'</div>';
+  btn.addEventListener('click',()=>{
+    const open=panel.hidden;panel.hidden=!open;btn.setAttribute('aria-expanded',String(open));
+  });
+})();
 
 /* =====================================================
    RESUMEN DE COTIZACIÓN (para captura)
