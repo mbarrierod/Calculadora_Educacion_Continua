@@ -60,6 +60,8 @@
   .seg button.active{background:var(--teal-soft);color:var(--teal-ink);border-color:var(--teal)}
   .seg button:disabled{opacity:.4;cursor:not-allowed}
   .seg button.locked{border-style:dashed;color:var(--amber)}
+  .nosc-btn{display:block;width:100%;margin-top:4px;padding:13px 16px;border-radius:10px;border:2px solid var(--violet);background:var(--violet-soft);color:#d9d3ff;font:700 14.5px var(--font-ui);cursor:pointer}
+  .nosc-btn:hover{background:#241b45}
   .gm-btn{margin-top:10px;background:transparent;border:1px dashed var(--border);color:var(--dim);padding:8px 14px;border-radius:8px;font:600 12.5px var(--font-ui);cursor:pointer}
   .gm-btn:hover{border-color:var(--amber);color:var(--amber)}
   .gm-btn.active{border-style:solid;border-color:var(--amber);color:var(--amber);background:rgba(224,164,88,.12)}
@@ -117,6 +119,7 @@
   .ref-btn[aria-expanded="true"] .ref-chev{transform:rotate(180deg)}
   .ref-panel{background:var(--panel);border:1px solid #6b4a2a;border-radius:14px;padding:22px 24px;margin:-4px 0 20px}
   .ref-panel h3{margin:0 0 10px;font:700 12px var(--font-mono);letter-spacing:.06em;text-transform:uppercase;color:#f6b35c}
+  .ref-only{display:inline-block;margin:0 0 14px;padding:8px 14px;border-radius:8px;background:rgba(246,179,92,.16);border:1px solid #f6b35c;color:#f6b35c;font:800 14px var(--font-ui);letter-spacing:.02em}
   .ref-intro{font-size:16px;line-height:1.6;margin:0 0 8px;font-weight:600}
   .ref-dif{display:grid;gap:10px;margin:14px 0 18px;padding:0;list-style:none}
   .ref-dif li{background:var(--panel2);border:1px solid var(--border);border-left:3px solid #f6b35c;border-radius:10px;padding:12px 14px;font-size:14.5px;line-height:1.55}
@@ -246,6 +249,10 @@
           <label for="fechaInput">Fecha de creación del lead</label>
           <input type="date" id="fechaInput">
           <div class="hint">Con esta fecha se decide si conserva el precio anterior o ya aplica el nuevo.</div>
+        </div>
+        <div class="field">
+          <button type="button" class="nosc-btn" id="noscBtn">Cotización precio con beca</button>
+          <div class="hint" id="noscHint">Muestra la mensualidad con beca, sin los primeros pagos bajos. Elige programa, tipo de lead y fecha.</div>
         </div>
       </div>
       <div class="result" id="dipResult" aria-live="polite"></div>
@@ -645,6 +652,7 @@ const REFERIDOS={"intro": ["Recordemos que cada venta puede convertirse en una n
 (function(){
   const btn=$('refBtn'),panel=$('refPanel');
   panel.innerHTML=
+    '<div class="ref-only">Solo aplica para diplomados</div>'+
     '<h3>Mensaje principal</h3>'+
     REFERIDOS.intro.map(t=>'<p class="ref-intro">'+esc(t)+'</p>').join('')+
     '<ul class="ref-dif">'+REFERIDOS.diferenciadores.map(t=>'<li>'+esc(t)+'</li>').join('')+'</ul>'+
@@ -664,14 +672,14 @@ let qModel=null,qMeta=null,qLastFocus=null;
 function quoteHTML(m,meta){
   const opts=m.opciones.map(o=>{
     const rows=o.pagos.map(r=>'<div class="q-row"><span>'+esc(r.l)+'</span><b>'+esc(r.r)+'</b></div>').join('')+
-      '<div class="q-row q-total"><span>Total</span><b>'+fmt(o.total)+'</b></div>';
+      (o.mensual?'':'<div class="q-row q-total"><span>Total</span><b>'+fmt(o.total)+'</b></div>');
     const lista=[];
     if(o.lista)lista.push('Precio de lista '+fmt(o.lista));
     if(o.pct)lista.push(Math.round(o.pct*100)+'% de beca');
     return '<div class="qc-opt">'+
       '<div class="qc-opt-label">'+esc(o.label)+'</div>'+
       ((o.sub&&!o.pct)?'<div class="qc-opt-sub">'+esc(o.sub)+'</div>':'')+
-      '<div class="qc-total">'+fmt(o.total)+'<small>MXN</small></div>'+
+      '<div class="qc-total">'+fmt(o.mensual||o.total)+'<small>'+(o.mensual?'MXN / mes':'MXN')+'</small></div>'+
       (lista.length?'<div class="qc-list">'+esc(lista.join('  ·  '))+'</div>':'')+
       rows+(o.nota?'<div class="qc-note">'+esc(o.nota)+'</div>':'')+'</div>';
   }).join('');
@@ -705,6 +713,33 @@ $('qClose').addEventListener('click',closeQuote);
 qModal.addEventListener('mousedown',e=>{if(e.target===qModal)closeQuote()});
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!qModal.hidden)closeQuote()});
 qName.addEventListener('input',renderQuote);
+
+/* ---------- cotización precio con beca (solo mensualidades, sin los primeros pagos bajos) ---------- */
+$('noscBtn').addEventListener('click',()=>{
+  const hint=$('noscHint'),warn=m=>{hint.classList.add('warn');hint.textContent=m};
+  if(!dip.prog){warn('Primero elige un programa.');progInput.focus();return}
+  if(!dip.tipo){warn('Elige el tipo de lead / oferta.');return}
+  if(!fechaInput.value){warn('Captura la fecha de creación del lead.');fechaInput.focus();return}
+  hint.classList.remove('warn');
+  hint.textContent='Muestra la mensualidad con beca, sin los primeros pagos bajos. Elige programa, tipo de lead y fecha.';
+  const p=dip.prog,dur=p.duracion,tipo=dip.tipo;
+  const antes=isoToDate(fechaInput.value)<isoToDate(p.fecha_cambio);
+  const unico=tipo==='PAGO_UNICO';
+  const mk=(o,label)=>{
+    const m=o.meses,last=m[m.length-1];
+    const run=runsOf(m).pop();
+    return {label,mensual:last,lista:o.precio_lista||null,pct:o.pct_beca||null,
+      pagos:[{l:run.count===1?'Pago '+run.from:'Pagos '+run.from+' al '+run.to,r:run.count===1?fmt(run.val):fmt(run.val)+' c/u'}],total:o.total};
+  };
+  let opciones,tags;
+  if(antes){const o=DATA.old[dur][tipo];opciones=[mk(o,'Tu cotización')];tags=o.tags||[]}
+  else if(unico){const o=DATA.new_unico[dur];opciones=[{label:'Pago único',pagos:[{l:'Pago único',r:fmt(o.total)}],total:o.total}];tags=o.tags||[]}
+  else{const o1=DATA.new_opt1[dur][tipo],o2=DATA.new_opt2[dur][tipo];opciones=[mk(o1,'Opción 1'),mk(o2,'Opción 2')];tags=o1.tags||[]}
+  const ben=antes
+    ? DATA.beneficios.filter(b=>(b.id==='voxy'&&tags.some(t=>/voxy/i.test(t)))||(b.id==='platzi'&&tags.some(t=>/platzi/i.test(t)))).map(b=>({nombre:b.nombre,desc:b.desc}))
+    : benefitsList(tags.includes('VOXY')).map(b=>({nombre:b.nombre,desc:b.desc}));
+  openQuote({tab:'dip',titulo:p.nombre,chips:['Duración: '+dur,'Precio con beca'],opciones,beneficios:ben,notas:[]});
+});
 
 /* ---------- arranque ---------- */
 updateTipoButtons();renderDip();
