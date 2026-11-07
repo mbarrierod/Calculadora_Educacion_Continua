@@ -521,7 +521,7 @@ function renderDip(){
   if(!dip.tipo||!fechaInput.value){dipResult.innerHTML=placeholder(p.nombre,'Elige el tipo de lead y confirma la fecha de creación para calcular el precio.');dip.quote=null;return}
   if(dip.tipo==='RMKT'&&rmktBloqueado()){dip.tipo=null;updateTipoButtons();renderDip();return}
   const dur=p.duracion,tipo=dip.tipo;
-  const antes=isoToDate(fechaInput.value)<isoToDate(p.fecha_cambio)&&!!DATA.old[dur][tipo];
+  const antes=isoToDate(fechaInput.value)<isoToDate(p.fecha_cambio)&&p.bloque>2&&!!DATA.old[dur][tipo];
   const meta=TIPO[tipo]+' · '+dur+' · Bloque '+p.bloque;
 
   if(antes){
@@ -559,7 +559,7 @@ function renderDip(){
   dipResult.innerHTML=
     '<div class="badge new"><span class="dot"></span>'+(unico?'PRECIO NUEVO — OPCIÓN ÚNICA':'PRECIO NUEVO — EL CLIENTE ELIGE LA ALTERNATIVA')+'</div>'+
     '<div class="prog-name">'+esc(p.nombre)+'</div><div class="prog-meta">'+esc(meta)+'</div>'+
-    '<div class="box ok"><b>Precio nuevo ya vigente</b>'+(tipo==='EGRESADOS'&&isoToDate(fechaInput.value)<isoToDate(p.fecha_cambio)?'Egresados no tiene precio anterior: aplica siempre el precio nuevo, sin importar la fecha de creación del lead. ':'El lead fue creado el '+fmtDate(fechaInput.value)+', en o después del cambio de precio del bloque ('+fmtDate(p.fecha_cambio)+'). ')+(unico?'El pago único tiene una sola opción de precio.':'Presenta ambas alternativas para que el cliente elija.')+'</div>'+
+    '<div class="box ok"><b>Precio nuevo ya vigente</b>'+(isoToDate(fechaInput.value)<isoToDate(p.fecha_cambio)&&p.bloque<=2?'Los programas del bloque '+p.bloque+' solo manejan precio nuevo, sin importar la fecha de creación del lead. ':tipo==='EGRESADOS'&&isoToDate(fechaInput.value)<isoToDate(p.fecha_cambio)?'Egresados no tiene precio anterior: aplica siempre el precio nuevo, sin importar la fecha de creación del lead. ':'El lead fue creado el '+fmtDate(fechaInput.value)+', en o después del cambio de precio del bloque ('+fmtDate(p.fecha_cambio)+'). ')+(unico?'El pago único tiene una sola opción de precio.':'Presenta ambas alternativas para que el cliente elija.')+'</div>'+
     speech+
     '<div class="options'+(unico?'':' two')+'">'+optionCard(p1)+(unico?'':optionCard(p2))+'</div>'+
     benefitsHTML(voxy)+
@@ -723,7 +723,7 @@ $('noscBtn').addEventListener('click',()=>{
   hint.classList.remove('warn');
   hint.textContent='Muestra la mensualidad con beca, sin los primeros pagos bajos. Elige programa, tipo de lead y fecha.';
   const p=dip.prog,dur=p.duracion,tipo=dip.tipo;
-  const antes=isoToDate(fechaInput.value)<isoToDate(p.fecha_cambio)&&!!DATA.old[dur][tipo];
+  const antes=isoToDate(fechaInput.value)<isoToDate(p.fecha_cambio)&&p.bloque>2&&!!DATA.old[dur][tipo];
   const unico=tipo==='PAGO_UNICO';
   const mk=(o,label)=>{
     const m=o.meses,last=m[m.length-1];
