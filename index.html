@@ -1,4 +1,4 @@
-<!doctype html><html><head><meta charset="utf-8"><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
 <title>Calculadora de Precios S4Learning</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -346,7 +346,7 @@ const $ = id => document.getElementById(id);
 const nf = new Intl.NumberFormat('es-MX',{style:'currency',currency:'MXN',maximumFractionDigits:0});
 const fmt = n => nf.format(Math.round(n));
 const esc = s => String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const norm = s => String(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+const norm = s => String(s||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
 function isoToDate(iso){const [y,m,d]=iso.split('-').map(Number);return new Date(y,m-1,d)}
 function fmtDate(iso){return iso?isoToDate(iso).toLocaleDateString('es-MX',{day:'2-digit',month:'long',year:'numeric'}):''}
 function fmtStamp(d){return d.toLocaleDateString('es-MX',{day:'numeric',month:'long',year:'numeric'})+', '+d.toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit',hour12:false})+' h'}
@@ -763,5 +763,73 @@ $('noscBtn').addEventListener('click',()=>{
 updateTipoButtons();renderDip();
 })();
 </script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script>
+(function(){
+  'use strict';
+  const qModal=document.getElementById('qModal'),qCard=document.getElementById('qCard'),
+        qName=document.getElementById('qName'),qClose=document.getElementById('qClose');
+  if(!qModal||!qCard||!qClose)return;
+
+  const btn=document.createElement('button');
+  btn.type='button';
+  btn.className='btn primary';
+  btn.id='qPdf';
+  btn.textContent='Descargar PDF';
+  qClose.parentNode.insertBefore(btn,qClose);
+
+  const wait=ms=>new Promise(r=>setTimeout(r,ms));
+  const slug=s=>String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+    .replace(/[^a-zA-Z0-9]+/g,'_').replace(/^_+|_+$/g,'').slice(0,60);
+
+  function fileName(){
+    const cliente=slug(qName&&qName.value);
+    const progEl=qCard.querySelector('.qc-prog');
+    const prog=slug(progEl?progEl.textContent:'');
+    const d=new Date(),p=n=>String(n).padStart(2,'0');
+    const fecha=d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate());
+    return 'Cotizacion_'+(cliente?cliente+'_':'')+(prog||'programa')+'_'+fecha+'.pdf';
+  }
+
+  async function guardar(pdf,filename){
+    const blob=pdf.output('blob');
+    // Si la página corre dentro de Claude (artefacto publicado) y tiene habilitada la capacidad "downloads", se usa esa.
+    try{
+      if(window.claude&&typeof window.claude.use==='function'){
+        const d=await Promise.race([window.claude.use('downloads'),wait(2500).then(()=>null)]);
+        if(d){await d.save({filename,data:blob});return}
+      }
+    }catch(e){if(e&&e.code==='declined')return}
+    // Descarga normal del navegador
+    pdf.save(filename);
+  }
+
+  btn.addEventListener('click',async()=>{
+    if(!window.html2canvas||!window.jspdf){btn.textContent='No cargó la librería PDF';setTimeout(()=>btn.textContent='Descargar PDF',2500);return}
+    const original=btn.textContent;
+    btn.disabled=true;btn.textContent='Generando PDF…';
+    const prevTop=qModal.scrollTop;
+    try{
+      qModal.scrollTop=0;
+      const canvas=await window.html2canvas(qCard,{scale:2,backgroundColor:'#ffffff',useCORS:true,logging:false,scrollX:0,scrollY:0});
+      const w=canvas.width/2,h=canvas.height/2;
+      const pdf=new window.jspdf.jsPDF({orientation:w>h?'l':'p',unit:'px',format:[w,h],hotfixes:['px_scaling']});
+      pdf.addImage(canvas.toDataURL('image/jpeg',0.95),'JPEG',0,0,w,h);
+      await guardar(pdf,fileName());
+    }catch(err){
+      console.error(err);
+      btn.textContent='No se pudo generar el PDF';
+      await wait(2500);
+    }finally{
+      qModal.scrollTop=prevTop;
+      btn.disabled=false;btn.textContent=original==='Generando PDF…'?'Descargar PDF':original;
+      if(btn.textContent!=='Descargar PDF')btn.textContent='Descargar PDF';
+    }
+  });
+})();
+</script>
+
 
 </body></html>
